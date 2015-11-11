@@ -120,13 +120,34 @@ class Card
   end
 end
 
+class Stack
+  attr_accessor :stack
+
+  def initialize
+    @stack = 100
+  end
+
+  def show_stack
+    puts "-----------"
+    puts "|          |"
+    puts "|   $" + stack.to_s + "   |"
+    puts "|          |"
+    puts "-----------"
+  end
+
+  def to_s
+    show_stack
+  end
+end
+
 class Game
   include Hand
-  attr_accessor :deck, :dealer, :player
+  attr_accessor :deck, :dealer, :player, :stack
   def initialize
     @deck = Deck.new
     @dealer = Dealer.new
     @player = Player.new
+    @stack = Stack.new
   end
 
   def blackjack_check
@@ -252,6 +273,7 @@ class Game
       new_game
       deck.shuffle_deck
       opening_hand_deal
+      stack.show_stack
         if blackjack_check == false
           player.show_hand
           dealer_opening_hand
