@@ -16,6 +16,7 @@ module Hand
 
   def show_both_hands
     system 'Clear'
+    stack.show_stack
     player.show_hand
     puts " "
     puts " ---------------------"
@@ -121,18 +122,15 @@ class Card
 end
 
 class Stack
-  attr_accessor :stack
+  attr_accessor :amount
 
   def initialize
-    @stack = 100
+    @amount = 30
   end
 
   def show_stack
-    puts "-----------"
-    puts "|          |"
-    puts "|   $" + stack.to_s + "   |"
-    puts "|          |"
-    puts "-----------"
+    puts "STACK SIZE: $" + amount.to_s
+    puts "================="
   end
 
   def to_s
@@ -142,12 +140,13 @@ end
 
 class Game
   include Hand
-  attr_accessor :deck, :dealer, :player, :stack
+  attr_accessor :deck, :dealer, :player, :stack, :bet
   def initialize
     @deck = Deck.new
     @dealer = Dealer.new
     @player = Player.new
     @stack = Stack.new
+    @bet = bet
   end
 
   def blackjack_check
@@ -160,6 +159,7 @@ class Game
     elsif dealer.calculate_hand_total == 21
       show_both_hands
       puts "#{dealer.name} got Blackjack. Dealer wins."
+      lose_bet
     else
       return false
     end
@@ -182,6 +182,19 @@ class Game
     puts " "
   end
 
+  def player_bet
+    stack.show_stack
+    begin
+      puts "Place your bet. (maximum of $20)"
+      @bet = gets.chomp.to_i
+    end until (0..20).include?(bet)
+    system 'Clear'
+  end
+
+  def lose_bet
+    stack.amount -= @bet
+  end
+
   def player_turn
    while player.calculate_hand_total < 21
       puts "Press (1) to hit or (2) to stay."
@@ -191,12 +204,14 @@ class Game
         player.add_a_card(@deck.deal_one_card)
         player.calculate_hand_total
         system 'Clear'
+        stack.show_stack
         player.show_hand
         dealer_opening_hand
         if player.calculate_hand_total == 21
           puts "#{player.name} got 21!"
         elsif player.calculate_hand_total > 21
           puts "Bust! Dealer wins."
+          lose_bet
         end
       elsif hit_or_stay == 2
         puts "#{player.name} is staying with #{player.calculate_hand_total}."
@@ -213,6 +228,7 @@ class Game
       system 'Clear' 
       puts "Dealer's second card is #{dealer.cards[1]} for a total of #{dealer.calculate_hand_total}."
       sleep 2
+      stack.show_stack
       show_both_hands
       if (17..21).include?(dealer.calculate_hand_total)
         puts "Dealer must stay with #{dealer.calculate_hand_total}."
@@ -221,6 +237,7 @@ class Game
       
       while dealer.calculate_hand_total < 17
         dealer.add_a_card(@deck.deal_one_card)
+        stack.show_stack
         show_both_hands
         if dealer.calculate_hand_total < 17
         elsif (17..21).include?(dealer.calculate_hand_total)
@@ -237,6 +254,7 @@ class Game
     sleep 1
     if dealer.calculate_hand_total >= player.calculate_hand_total
       winning_message(dealer.name, dealer.calculate_hand_total, player.calculate_hand_total)
+      lose_bet
     else
       winning_message(player.name, player.calculate_hand_total, dealer.calculate_hand_total)
     end
@@ -269,9 +287,10 @@ class Game
 
   def play
     welcome_message
-   loop do
+    loop do
       new_game
       deck.shuffle_deck
+      player_bet
       opening_hand_deal
       stack.show_stack
         if blackjack_check == false
