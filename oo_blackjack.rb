@@ -14,6 +14,16 @@ module Hand
     cards << new_card
   end
 
+  def show_both_hands
+    system 'Clear'
+    player.show_hand
+    puts " "
+    puts " ---------------------"
+    puts " "
+    dealer.show_hand
+    sleep 2
+  end
+
   def calculate_hand_total
     card_values = cards.map {|card| card.value}
     total = 0
@@ -37,15 +47,14 @@ end
 
 class Player
   include Hand
-  attr_accessor :cards, :name
+  attr_accessor :cards, :name, 
 
   def initialize
     @name = name
     @cards = []
   end
 
-  def calculate_score
-  end
+  
 end
 
 class Dealer
@@ -112,6 +121,7 @@ class Card
 end
 
 class Game
+  include Hand
   attr_accessor :deck, :dealer, :player
   def initialize
     @deck = Deck.new
@@ -119,19 +129,18 @@ class Game
     @player = Player.new
   end
 
-  def deal_card
-  end
-
   def blackjack_check
     if player.calculate_hand_total == 21 && dealer.calculate_hand_total == 21
+      show_both_hands
       puts "Both players get Blackjack. Keep your money."
     elsif player.calculate_hand_total == 21
+      show_both_hands
       puts "Blackjack! #{player.name} wins!"
     elsif dealer.calculate_hand_total == 21
-      system 'Clear'
-      player.show_hand
-      dealer.show_hand
+      show_both_hands
       puts "#{dealer.name} got Blackjack. Dealer wins."
+    else
+      return false
     end
   end
 
@@ -142,20 +151,80 @@ class Game
     end
   end
 
-  def display_opening_hand
-    opening_hand_deal
-    player.show_hand
+  def dealer_opening_hand
+    puts " "
+    puts " ---------------------"
+    puts " "
     puts "#{dealer.name}'s hand:"
     puts "#{dealer.cards[0]}"
     puts " X of X"
-    # puts "#{dealer.calculate_hand_total(cards)}"
+    puts " "
+  end
+
+  def player_turn
+   while player.calculate_hand_total < 21
+      puts "Press (1) to hit or (2) to stay."
+      hit_or_stay = gets.chomp.to_i
+     
+      if hit_or_stay == 1
+        player.add_a_card(@deck.deal_one_card)
+        player.calculate_hand_total
+        system 'Clear'
+        player.show_hand
+        dealer_opening_hand
+        if player.calculate_hand_total == 21
+          puts "#{player.name} got 21!"
+        elsif player.calculate_hand_total > 21
+          puts "Bust! Dealer wins."
+        end
+      elsif hit_or_stay == 2
+        puts "#{player.name} is staying with #{player.calculate_hand_total}."
+        sleep 1
+        break
+      else
+        puts "Sorry I didn't get that. Please just hit a (1) or a (2)."
+      end     
+    end
+  end
+
+  def dealer_turn
+    if player.calculate_hand_total <= 21
+      system 'Clear' 
+      puts "Dealer's second card is #{dealer.cards[1]} for a total of #{dealer.calculate_hand_total}."
+      sleep 2
+      show_both_hands
+      if (17..21).include?(dealer.calculate_hand_total)
+        puts "Dealer must stay with #{dealer.calculate_hand_total}."
+        compare_total
+      end
+      
+      while dealer.calculate_hand_total < 17
+        dealer.add_a_card(@deck.deal_one_card)
+        show_both_hands
+        if dealer.calculate_hand_total < 17
+        elsif (17..21).include?(dealer.calculate_hand_total)
+          puts "Dealer must stay."
+          compare_total
+        else
+          puts "Dealer busts! #{player.name} wins!"
+        end
+      end
+    end
   end
 
   def compare_total
+    sleep 1
+    if dealer.calculate_hand_total >= player.calculate_hand_total
+      winning_message(dealer.name, dealer.calculate_hand_total, player.calculate_hand_total)
+    else
+      winning_message(player.name, player.calculate_hand_total, dealer.calculate_hand_total)
+    end
   end
 
-  def declare_winner
+  def winning_message(winner, winner_total, loser_total)
+    puts "#{winner} won with a total of #{winner_total} over #{loser_total}!"
   end
+
 
   def welcome_message
     puts "Welcome to Blackjack! What is your name?"
@@ -165,30 +234,36 @@ class Game
     sleep 1
   end
 
+  def new_game
+    @deck = Deck.new
+    player.cards = []
+    dealer.cards = []
+  end
+
+  def play_again?
+    sleep 1
+    puts "Would you like to play again? (Y/N)"
+    gets.chomp.upcase == 'Y'
+  end 
+
   def play
     welcome_message
-    deck.shuffle_deck
-    display_opening_hand
-    if player.calculate_hand_total == 21 || dealer.calculate_hand_total == 21
-      blackjack_check 
-    else end
-
-
-    # blackjack check
-  end
+   loop do
+      new_game
+      deck.shuffle_deck
+      opening_hand_deal
+        if blackjack_check == false
+          player.show_hand
+          dealer_opening_hand
+          player_turn
+          dealer_turn
+        end
+      break unless play_again?
+    end
+  end 
 end
 
 Game.new.play
-
-# 2.times {player.add_a_card(deck.deal_one_card)}
-
-
-
-# player.show_hand
-
-# puts dealer.show_hand
-
-# puts deck.cards.size
 
 
 
