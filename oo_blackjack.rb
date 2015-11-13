@@ -4,7 +4,7 @@ require 'pry'
 module Hand
   def show_hand
     puts "#{name}'s hand:"
-    cards.each do|card|
+    cards.each do |card|
       puts "#{card}"
     end
     puts "Total ==> #{calculate_hand_total}"
@@ -12,17 +12,6 @@ module Hand
 
   def add_a_card(new_card)
     cards << new_card
-  end
-
-  def show_both_hands
-    system 'Clear'
-    stack.show_stack
-    player.show_hand
-    puts " "
-    puts " ---------------------"
-    puts " "
-    dealer.show_hand
-    sleep 1.5
   end
 
   def calculate_hand_total
@@ -101,21 +90,17 @@ class Card
     @value = value
   end
 
-  def display_card
-    "#{value} of #{suit_name}"
-  end
-
   def suit_name
     case suit
-      when 'C' then 'clubs'
-      when 'S' then 'spades'
-      when 'D' then 'diamonds'
-      when 'H' then 'hearts'
+    when 'C' then 'clubs'
+    when 'S' then 'spades'
+    when 'D' then 'diamonds'
+    when 'H' then 'hearts'
     end
   end
 
   def to_s
-    display_card
+    "#{value} of #{suit_name}"
   end
 end
 
@@ -127,7 +112,7 @@ class Stack
   end
 
   def show_stack
-    puts "STACK SIZE: $" + amount.to_s
+    puts "STACK SIZE: $" << amount.to_s
     puts "================="
   end
 
@@ -141,14 +126,12 @@ class Stack
 end
 
 class Game
-  include Hand
   attr_accessor :deck, :dealer, :player, :stack, :bet
   def initialize
     @deck = Deck.new
     @dealer = Dealer.new
     @player = Player.new
     @stack = Stack.new
-    @bet = bet
   end
 
   def new_game
@@ -163,7 +146,7 @@ class Game
 
   def welcome_message
     puts "Welcome to Blackjack! What is your name?"
-    @player.name = gets.chomp
+    player.name = gets.chomp
     system 'Clear'
     puts "Ok, #{player.name}, let's deal!"
     pause_game
@@ -171,12 +154,12 @@ class Game
 
   def opening_hand_deal
     2.times do
-      @player.add_a_card(@deck.deal_one_card)
-      @dealer.add_a_card(@deck.deal_one_card)
+      player.add_a_card(@deck.deal_one_card)
+      dealer.add_a_card(@deck.deal_one_card)
     end
   end
 
-  def dealer_opening_hand
+  def display_dealer_opening_hand
     puts " "
     puts " ---------------------"
     puts " "
@@ -184,6 +167,17 @@ class Game
     puts "#{dealer.cards[0]}"
     puts " X of X"
     puts " "
+  end
+
+  def show_both_hands
+    system 'Clear'
+    stack.show_stack
+    player.show_hand
+    puts " "
+    puts " ---------------------"
+    puts " "
+    dealer.show_hand
+    sleep 1.5
   end
 
   def player_bet
@@ -215,8 +209,6 @@ class Game
       show_both_hands
       puts "#{dealer.name} got Blackjack. Dealer wins."
       lose_bet
-    else
-      return false
     end
   end
 
@@ -231,7 +223,7 @@ class Game
         system 'Clear'
         stack.show_stack
         player.show_hand
-        dealer_opening_hand
+        display_dealer_opening_hand
         if player.calculate_hand_total == 21
           puts "#{player.name} got 21!"
         elsif player.calculate_hand_total > 21
@@ -320,9 +312,9 @@ class Game
       player_bet
       opening_hand_deal
       stack.show_stack
-        if blackjack_check == false
+        unless blackjack_check
           player.show_hand
-          dealer_opening_hand
+          display_dealer_opening_hand
           player_turn
           dealer_turn
           check_for_no_stack
